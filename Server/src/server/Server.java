@@ -40,29 +40,33 @@ public class Server {
 
             while (!clientSocket.isClosed()) {
                 try {
-                    // Read command and data
                     String commandName = (String) input.readObject();
-                    HumanBeing humanBeing = null;
-                    Integer userId = null;
-
-                    try {
-                        humanBeing = (HumanBeing) input.readObject();
-                        userId = (Integer) input.readObject();
-                    } catch (InvalidClassException e) {
-                        System.err.println("Критическая ошибка в handleClient: " + e.getMessage());
-                        output.writeObject(new ExecutionResponse(false, "Ошибка десериализации: " + e.getMessage()));
-                        continue;
-                    }
+                    Object argument = input.readObject();
+                    Integer userId = (Integer) input.readObject();
 
                     System.out.println("Получен запрос: command=" + commandName + ", userId=" + userId);
-                    if (humanBeing != null) {
-                        System.out.println("Аргумент: " + humanBeing.getName());
+                    if (argument != null) {
+                        if (argument instanceof HumanBeing) {
+                            System.out.println("Аргумент: " + ((HumanBeing) argument).getName());
+                        } else if (argument instanceof Long) {
+                            System.out.println("Аргумент: id=" + argument);
+                        } else {
+                            System.out.println("Аргумент: " + argument);
+                        }
+                    } else {
+                        System.out.println("Аргумент: null");
                     }
 
-                    // Execute command
+                    HumanBeing humanBeing = null;
+                    if (argument instanceof HumanBeing) {
+                        humanBeing = (HumanBeing) argument;
+                    } else if (commandName.equals("removebyid") && argument instanceof Long) {
+                        humanBeing = new HumanBeing();
+                        humanBeing.setId((Long) argument);
+                    }
+
                     ExecutionResponse response = commandManager.executeCommand(commandName, humanBeing, userId);
 
-                    // Send response
                     output.writeObject(response);
                     output.flush();
 

@@ -15,7 +15,6 @@ public class HumanBeingAsker implements Serializable {
     public HumanBeing askHumanBeing() {
         HumanBeing humanBeing = new HumanBeing();
 
-        // Name
         while (true) {
             console.println("Введите имя (не пустое):");
             String name = console.read().trim();
@@ -27,7 +26,6 @@ public class HumanBeingAsker implements Serializable {
             break;
         }
 
-        // Coordinate X
         double x = 0.0;
         while (true) {
             try {
@@ -52,7 +50,6 @@ public class HumanBeingAsker implements Serializable {
             }
         }
 
-        // Coordinate Y
         float y = 0.0f;
         while (true) {
             try {
@@ -77,10 +74,8 @@ public class HumanBeingAsker implements Serializable {
             }
         }
 
-        // Устанавливаем координаты один раз после успешного ввода x и y
         humanBeing.setCoordinates(new Coordinates(x, y));
 
-        // Real Hero
         while (true) {
             console.println("Введите realHero (true/false):");
             String realHeroInput = console.read().trim().toLowerCase();
@@ -91,7 +86,6 @@ public class HumanBeingAsker implements Serializable {
             console.println("Ошибка: введите true или false");
         }
 
-        // Has Toothpick
         while (true) {
             console.println("Введите hasToothpick (true/false/null):");
             String hasToothpickInput = console.read().trim().toLowerCase();
@@ -105,7 +99,6 @@ public class HumanBeingAsker implements Serializable {
             console.println("Ошибка: введите true, false или null");
         }
 
-        // Impact Speed
         while (true) {
             console.println("Введите impactSpeed (целое число):");
             String input = console.read().trim();
@@ -122,7 +115,6 @@ public class HumanBeingAsker implements Serializable {
             }
         }
 
-        // Weapon Type
         while (true) {
             console.println("Введите weaponType (AXE/SHOTGUN/RIFLE/KNIFE/MACHINE_GUN):");
             String weaponInput = console.read().trim();
@@ -138,7 +130,6 @@ public class HumanBeingAsker implements Serializable {
             }
         }
 
-        // Mood
         while (true) {
             console.println("Введите mood (SADNESS/LONGING/CALM/RAGE/FRENZY):");
             String moodInput = console.read().trim();
@@ -155,7 +146,6 @@ public class HumanBeingAsker implements Serializable {
             }
         }
 
-        // Car
         while (true) {
             console.println("Введите car.name (не пустое):");
             String carName = console.read().trim();
@@ -167,7 +157,6 @@ public class HumanBeingAsker implements Serializable {
             break;
         }
 
-        // Creation Date (set automatically)
         humanBeing.setCreationDate(java.time.LocalDateTime.now());
 
         return humanBeing;

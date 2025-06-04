@@ -5,8 +5,8 @@ import models.HumanBeing;
 import utility.Console;
 import utility.ExecutionResponse;
 
+import java.util.HashSet;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public class PrintUniqueImpactSpeed extends Command {
     private final Console console;
@@ -21,16 +21,24 @@ public class PrintUniqueImpactSpeed extends Command {
     @Override
     public ExecutionResponse execute(HumanBeing argument, Integer userId) {
         console.println("Выполняется команда: print_unique_impact_speed, userId: " + userId);
-        Set<Long> uniqueSpeeds = collectionManager.getCollection().stream()
-                .filter(h -> h.getUserId().equals(userId))
-                .map(HumanBeing::getImpactSpeed)
-                .collect(Collectors.toSet());
+        if (userId == null) {
+            return new ExecutionResponse(false, "Ошибка: необходимо авторизоваться (login) или зарегистрироваться (register)");
+        }
+
+        Set<Long> uniqueSpeeds = new HashSet<>();
+        for (HumanBeing human : collectionManager.getCollection()) {
+            if (human.getUserId().equals(userId)) {
+                uniqueSpeeds.add(human.getImpactSpeed());
+            }
+        }
+
+        if (uniqueSpeeds.isEmpty()) {
+            return new ExecutionResponse(true, "У вас нет элементов в коллекции.");
+        }
 
         StringBuilder response = new StringBuilder("Уникальные значения impactSpeed:\n");
-        if (uniqueSpeeds.isEmpty()) {
-            response.append("Нет элементов, принадлежащих пользователю.");
-        } else {
-            uniqueSpeeds.forEach(speed -> response.append(speed).append("\n"));
+        for (Long speed : uniqueSpeeds) {
+            response.append(speed).append("\n");
         }
 
         return new ExecutionResponse(true, response.toString());

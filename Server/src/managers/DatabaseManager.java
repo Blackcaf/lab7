@@ -87,18 +87,6 @@ public class DatabaseManager {
         String sql = "INSERT INTO human_beings (name, coordinate_x, coordinate_y, creation_date, impact_speed, real_hero, has_toothpick, weapon_type, mood, car_name, user_id) " +
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id";
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            System.out.println("Debug - Adding human being:");
-            System.out.println("Name: " + humanBeing.getName());
-            System.out.println("Coordinates: x=" + humanBeing.getCoordinates().getX() + ", y=" + humanBeing.getCoordinates().getY());
-            System.out.println("Creation date: " + humanBeing.getCreationDate());
-            System.out.println("Impact speed: " + humanBeing.getImpactSpeed());
-            System.out.println("Real hero: " + humanBeing.getRealHero());
-            System.out.println("Has toothpick: " + humanBeing.getHasToothpick());
-            System.out.println("Weapon type: " + humanBeing.getWeaponType());
-            System.out.println("Mood: " + humanBeing.getMood());
-            System.out.println("Car name: " + humanBeing.getCar().getName());
-            System.out.println("User ID: " + userId);
-
             pstmt.setString(1, humanBeing.getName());
             pstmt.setDouble(2, humanBeing.getCoordinates().getX());
             pstmt.setFloat(3, humanBeing.getCoordinates().getY());
@@ -115,22 +103,16 @@ public class DatabaseManager {
             pstmt.setString(10, humanBeing.getCar().getName());
             pstmt.setInt(11, userId);
 
-            System.out.println("Debug - Executing SQL: " + sql);
-            ResultSet rs = pstmt.executeQuery();
-            if (rs.next()) {
-                long id = rs.getLong("id");
-                humanBeing.setId(id);
-                humanBeing.setUserId(userId);
-                collection.put(id, humanBeing);
-                System.out.println("Debug - Successfully added with ID: " + id);
-                return true;
-            } else {
-                System.err.println("Debug - No ID returned from insert");
-                return false;
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    long id = rs.getLong(1);
+                    humanBeing.setId(id);
+                    return true;
+                }
             }
+            return false;
         } catch (SQLException e) {
-            System.err.println("Debug - SQL Error: " + e.getMessage());
-            e.printStackTrace();
+            System.err.println("Ошибка при добавлении элемента: " + e.getMessage());
             return false;
         }
     }
@@ -194,11 +176,14 @@ public class DatabaseManager {
         try (PreparedStatement pstmt = connection.prepareStatement(query)) {
             pstmt.setInt(1, userId);
             int rowsAffected = pstmt.executeUpdate();
-            collection.entrySet().removeIf(entry -> entry.getValue().getUserId().equals(userId));
-            return rowsAffected > 0;
-        }
-        catch (SQLException e) {
+            if (rowsAffected > 0) {
+                collection.entrySet().removeIf(entry -> entry.getValue().getUserId().equals(userId));
+                return true;
+            }
+            return false;
+        } catch (SQLException e) {
             System.err.println("Ошибка очистки: " + e.getMessage());
+            e.printStackTrace();
             return false;
         }
     }
@@ -244,77 +229,9 @@ public class DatabaseManager {
     }
 
     private String hashPassword(String password) {
-        // Используем более сложный способ хеширования
         int hash = password.hashCode();
-        // Добавляем соль и дополнительное хеширование
         hash = hash * 31 + "SALT".hashCode();
         hash = hash * 31 + password.length();
         return String.format("%d", hash);
-    }
-
-    public void saveCollection() {
-        String deleteQuery = "DELETE FROM human_beings";
-        String insertQuery = "INSERT INTO human_beings (id, name, coordinate_x, coordinate_y, creation_date, impact_speed, real_hero, has_toothpick, weapon_type, mood, car_name, user_id) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        try {
-            // Clear the table
-            try (Statement stmt = connection.createStatement()) {
-                stmt.executeUpdate(deleteQuery);
-            }
-
-            // Insert all HumanBeings
-            try (PreparedStatement pstmt = connection.prepareStatement(insertQuery)) {
-                for (HumanBeing human : collection.values()) {
-                    pstmt.setLong(1, human.getId());
-                    pstmt.setString(2, human.getName());
-                    pstmt.setDouble(3, human.getCoordinates().getX());
-                    pstmt.setFloat(4, human.getCoordinates().getY());
-                    pstmt.setTimestamp(5, Timestamp.valueOf(human.getCreationDate()));
-                    pstmt.setLong(6, human.getImpactSpeed());
-                    pstmt.setBoolean(7, human.getRealHero());
-                    if (human.getHasToothpick() != null) {
-                        pstmt.setBoolean(8, human.getHasToothpick());
-                    } else {
-                        pstmt.setNull(8, Types.BOOLEAN);
-                    }
-                    pstmt.setString(9, human.getWeaponType().toString());
-                    pstmt.setString(10, human.getMood().toString());
-                    pstmt.setString(11, human.getCar().getName());
-                    pstmt.setInt(12, human.getUserId());
-                    pstmt.executeUpdate();
-                }
-            }
-            System.out.println("Коллекция сохранена в базу данных: " + collection.size() + " элементов");
-        } catch (SQLException e) {
-            System.err.println("Ошибка сохранения коллекции: " + e.getMessage());
-            e.printStackTrace();
-        }
-    }
-
-    public String getAllUsers() {
-        String query = "SELECT username FROM users ORDER BY username";
-        StringBuilder result = new StringBuilder();
-        try (Statement stmt = connection.createStatement();
-             ResultSet rs = stmt.executeQuery(query)) {
-            while (rs.next()) {
-                result.append(rs.getString("username")).append("\n");
-            }
-            return result.toString();
-        } catch (SQLException e) {
-            System.err.println("Ошибка получения списка пользователей: " + e.getMessage());
-            return "";
-        }
-    }
-
-    public boolean deleteUser(String username) {
-        String query = "DELETE FROM users WHERE username = ?";
-        try (PreparedStatement pstmt = connection.prepareStatement(query)) {
-            pstmt.setString(1, username);
-            int rowsAffected = pstmt.executeUpdate();
-            return rowsAffected > 0;
-        } catch (SQLException e) {
-            System.err.println("Ошибка удаления пользователя: " + e.getMessage());
-            return false;
-        }
     }
 }

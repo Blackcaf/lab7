@@ -1,3 +1,10 @@
-help
-show
-info
+add
+Test Human
+10
+20
+true
+false
+100
+AXE
+SADNESS
+Test Car

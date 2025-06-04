@@ -10,40 +10,46 @@ public class RemoveById extends Command {
     private final CollectionManager collectionManager;
 
     public RemoveById(Console console, CollectionManager collectionManager) {
-        super("removebyid", "удалить элемент из коллекции по ID");
+        super("removebyid", "удалить элемент из коллекции по его id");
         this.console = console;
         this.collectionManager = collectionManager;
     }
 
     @Override
     public ExecutionResponse execute(HumanBeing argument, Integer userId) {
-        try {
-            if (userId == null) {
-                return new ExecutionResponse(false, "Требуется авторизация");
-            }
+        console.println("Выполняется команда: removebyid, userId: " + userId);
+        if (userId == null) {
+            return new ExecutionResponse(false, "Ошибка: пользователь не авторизован");
+        }
+        if (argument == null || argument.getId() == null) {
+            return new ExecutionResponse(false, "Ошибка: необходимо указать id для удаления");
+        }
 
-            Long id;
-            if (argument == null || argument.getName() == null || argument.getName().trim().isEmpty()) {
-                return new ExecutionResponse(false, "Требуется указать ID элемента");
-            }
+        Long id = argument.getId();
+        // Debug: Print collection contents
+        console.println("Содержимое коллекции перед удалением id=" + id + ":");
+        for (Long key : collectionManager.getCollectionMap().keySet()) {
+            HumanBeing hb = collectionManager.getCollectionMap().get(key);
+            console.println("id=" + hb.getId() + ", userId=" + hb.getUserId());
+        }
 
-            try {
-                id = Long.parseLong(argument.getName().trim());
-            } catch (NumberFormatException e) {
-                return new ExecutionResponse(false, "ID должен быть числом");
-            }
+        HumanBeing humanBeing = collectionManager.getCollectionMap().get(id);
+        if (humanBeing == null) {
+            console.println("Элемент с id " + id + " не найден в коллекции");
+            return new ExecutionResponse(false, "Ошибка: элемент с id " + id + " не существует в коллекции");
+        }
+        if (!humanBeing.getUserId().equals(userId)) {
+            console.println("Элемент с id " + id + " принадлежит userId=" + humanBeing.getUserId());
+            return new ExecutionResponse(false, "Ошибка: элемент с id " + id + " принадлежит другому пользователю");
+        }
 
-            if (id <= 0) {
-                return new ExecutionResponse(false, "ID должен быть положительным числом");
-            }
-
-            if (collectionManager.remove(id, userId)) {
-                return new ExecutionResponse(true, "Элемент с ID " + id + " успешно удален");
-            } else {
-                return new ExecutionResponse(false, "Элемент с ID " + id + " не найден или у вас нет прав на его удаление");
-            }
-        } catch (Exception e) {
-            return new ExecutionResponse(false, "Ошибка при удалении элемента: " + e.getMessage());
+        boolean success = collectionManager.remove(id, userId);
+        if (success) {
+            console.println("Элемент с id " + id + " успешно удален");
+            return new ExecutionResponse(true, "Элемент с id " + id + " успешно удален");
+        } else {
+            console.println("Ошибка удаления id=" + id + " из базы данных");
+            return new ExecutionResponse(false, "Ошибка при удалении элемента с id " + id + ": не удалось удалить из базы данных");
         }
     }
 }

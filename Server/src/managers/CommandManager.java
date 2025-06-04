@@ -14,11 +14,9 @@ public class CommandManager {
 
     public CommandManager(Console console, CollectionManager collectionManager, DatabaseManager databaseManager) {
         this.console = console;
-        commands.put("add", new Add(console, collectionManager, databaseManager));
-        commands.put("remove_first", new RemoveFirst(collectionManager, console, databaseManager));
+        commands.put("add", new Add(collectionManager));
         commands.put("update", new Update(console, collectionManager, databaseManager));
         commands.put("remove_head", new RemoveHead(collectionManager, console, databaseManager));
-        commands.put("remove_lower", new RemoveLower(collectionManager, console, databaseManager));
         commands.put("clear", new Clear(console, collectionManager, databaseManager));
         commands.put("info", new Info(console, collectionManager));
         commands.put("show", new Show(console, collectionManager));

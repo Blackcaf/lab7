@@ -22,10 +22,8 @@ public class CollectionManager {
         return dbManager.loadHumanBeings();
     }
 
-    public String getInfo() {
-        return "Тип коллекции: " + ConcurrentHashMap.class.getSimpleName() + "\n" +
-                "Дата инициализации: " + initializationDate + "\n" +
-                "Количество элементов: " + dbManager.getCollection().size();
+    public LocalDateTime getInitializationDate() {
+        return initializationDate;
     }
 
     public boolean add(HumanBeing humanBeing, Integer userId) {

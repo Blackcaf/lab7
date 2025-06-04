@@ -30,7 +30,7 @@ public class ClientMain {
             while (true) {
                 console.println("Введите команду: ");
                 String command = console.read().trim();
-                HumanBeing humanBeing = null;
+                Object argument = null;
 
                 if (command.equals("exit")) {
                     output.writeObject(command);
@@ -47,8 +47,6 @@ public class ClientMain {
                         console.println("Ошибка: необходимо авторизоваться");
                         continue;
                     }
-
-                    // Запрашиваем список пользователей с сервера
                     output.writeObject("get_users");
                     output.writeObject(null);
                     output.writeObject(userId);
@@ -60,7 +58,6 @@ public class ClientMain {
                         continue;
                     }
 
-                    // Парсим список пользователей
                     String[] usersList = response.getMessage().split("\n");
                     users.clear();
                     for (String user : usersList) {
@@ -74,13 +71,11 @@ public class ClientMain {
                         continue;
                     }
 
-                    // Выводим список пользователей
                     console.println("Список пользователей:");
                     for (int i = 0; i < users.size(); i++) {
                         console.println((i + 1) + ". " + users.get(i));
                     }
 
-                    // Запрашиваем номер пользователя для удаления
                     console.println("Введите номер пользователя для удаления:");
                     String inputStr = console.read().trim();
                     int userNumber;
@@ -103,7 +98,6 @@ public class ClientMain {
                         continue;
                     }
 
-                    // Удаляем пользователя из списка
                     users.remove(userNumber - 1);
                     console.println("Пользователь " + usernameToDelete + " успешно удален");
                     continue;
@@ -124,9 +118,10 @@ public class ClientMain {
                         continue;
                     }
 
-                    humanBeing = new HumanBeing();
+                    HumanBeing humanBeing = new HumanBeing();
                     humanBeing.setName(username);
                     humanBeing.setCar(new Car(password));
+                    argument = humanBeing;
                 } else if (commandName.equals("execute_script")) {
                     console.println("Введите путь к файлу скрипта:");
                     String scriptPath = console.read().trim();
@@ -134,8 +129,24 @@ public class ClientMain {
                         console.println("Ошибка: путь к файлу не может быть пустым");
                         continue;
                     }
-                    humanBeing = new HumanBeing();
+                    HumanBeing humanBeing = new HumanBeing();
                     humanBeing.setName(scriptPath);
+                    argument = humanBeing;
+                } else if (commandName.equals("removebyid")) {
+                    console.println("Введите id элемента для удаления (целое положительное число):");
+                    String idInput = console.read().trim();
+                    Long id;
+                    try {
+                        id = Long.parseLong(idInput);
+                        if (id <= 0) {
+                            console.println("Ошибка: id должен быть положительным числом");
+                            continue;
+                        }
+                    } catch (NumberFormatException e) {
+                        console.println("Ошибка: введите корректное целое число для id");
+                        continue;
+                    }
+                    argument = id;
                 } else {
                     if (userId == null) {
                         console.println("Ошибка: необходимо войти в систему (login) или зарегистрироваться (register)");
@@ -145,7 +156,8 @@ public class ClientMain {
                     if (commandName.equals("add")) {
                         try {
                             HumanBeingAsker asker = new HumanBeingAsker(console);
-                            humanBeing = asker.askHumanBeing();
+                            HumanBeing humanBeing = asker.askHumanBeing();
+                            argument = humanBeing;
                         } catch (Exception e) {
                             console.println("Ошибка при создании объекта: " + e.getMessage());
                             continue;
@@ -166,8 +178,9 @@ public class ClientMain {
                         }
                         try {
                             HumanBeingAsker asker = new HumanBeingAsker(console);
-                            humanBeing = asker.askHumanBeing();
-                            humanBeing.setId(id); // Устанавливаем id
+                            HumanBeing humanBeing = asker.askHumanBeing();
+                            humanBeing.setId(id);
+                            argument = humanBeing;
                         } catch (Exception e) {
                             console.println("Ошибка при создании объекта: " + e.getMessage());
                             continue;
@@ -179,15 +192,17 @@ public class ClientMain {
                             console.println("Ошибка: имя не может быть пустым");
                             continue;
                         }
-                        humanBeing = new HumanBeing();
+                        HumanBeing humanBeing = new HumanBeing();
                         humanBeing.setName(name);
+                        argument = humanBeing;
                     } else if (commandName.equals("count_less_than_impact_speed")) {
                         console.println("Введите impactSpeed (целое число):");
                         String impactSpeedInput = console.read().trim();
                         try {
                             long impactSpeed = Long.parseLong(impactSpeedInput);
-                            humanBeing = new HumanBeing();
+                            HumanBeing humanBeing = new HumanBeing();
                             humanBeing.setImpactSpeed(impactSpeed);
+                            argument = humanBeing;
                         } catch (NumberFormatException e) {
                             console.println("Ошибка: введите корректное целое число");
                             continue;
@@ -196,19 +211,16 @@ public class ClientMain {
                 }
 
                 output.writeObject(commandName);
-                output.writeObject(humanBeing);
+                output.writeObject(argument);
                 output.writeObject(userId);
                 output.flush();
 
                 ExecutionResponse response = (ExecutionResponse) input.readObject();
-                // Выводим ответ сервера
                 console.println("Ответ сервера: " + response.getMessage());
 
-                // Для команды execute_script дублируем полный лог выполнения скрипта
                 if (commandName.equals("execute_script")) {
                     if (response.isSuccess()) {
                         console.println("Результат выполнения скрипта:");
-                        // Выводим сообщение построчно для сохранения форматирования
                         String message = response.getMessage();
                         if (message != null && !message.isEmpty()) {
                             String[] lines = message.split("\\r?\\n");
